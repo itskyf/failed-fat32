@@ -1,12 +1,14 @@
 #pragma once
 #include <cstdint>
 #include <fstream>
+#include <memory>
 #include <string>
 
 #define EXT2_MIN_BLOCK_LOG_SIZE 10 /* 1024 */
 #define EXT2_MIN_BLOCK_SIZE (1 << EXT2_MIN_BLOCK_LOG_SIZE)
 #define EXT2_GOOD_OLD_FIRST_INO \
   11  // First non-reserved inode for old ext2 filesystems
+#define EXT2_SUPER_MAGIC 0xEF53
 
 struct ext2_group_desc {
   uint32_t bg_block_bitmap;      /* Blocks bitmap block */
@@ -30,11 +32,7 @@ struct ext2_inode {
   uint32_t i_size;   /* Size in bytes */
   uint32_t i_blocks; /* Blocks count */
   uint32_t i_flags;  /* File flags */
-
   uint32_t i_block[EXT2_N_BLOCKS]; /* Pointers to blocks */
-  uint32_t i_file_acl;             /* File ACL */
-  uint32_t i_dir_acl;              /* Directory ACL */
-  uint32_t i_faddr;                /* Fragment address */
 };
 
 // TODO tuy chon
@@ -47,9 +45,9 @@ struct ext2_super_block {
   uint32_t s_log_block_size;    /* Block size */
   uint32_t s_blocks_per_group;  /* # Blocks per group */
   uint32_t s_inodes_per_group;  /* # Inodes per group */
+  uint16_t s_magic;
   // uint16_t s_errors;           TODO /* Behaviour when detecting errors */
-
-  ext2_super_block(int fSize_b);
+  void write(std::ofstream &fo);
 };
 
 struct ext2_dir_entry {
@@ -63,16 +61,15 @@ struct ext2_dir_entry {
 
 class ext2 {
  public:
-  ext2(int fSize_mb);
-  ext2(std::string const& fName);
+  ext2(size_t fSize_mb, std::string const& fileName);
+  ext2(std::string const& fileName);
+  virtual ~ext2();
 
  private:
   void WriteToDisk();
-  void Create();
 
-  std::ifstream fStream;
-  ext2_super_block superBlock;
-  ext2_group_desc grpDesc;
-  int blockSize;
+  std::unique_ptr<ext2_super_block> sb;
+  std::unique_ptr<ext2_group_desc[]> gd;
+  std::fstream file;
   std::string curDir;
 };

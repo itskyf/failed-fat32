@@ -38,7 +38,7 @@
     <ClCompile Include="ext2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ext2_super_block.cpp">
+    <ClCompile Include="super_block.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

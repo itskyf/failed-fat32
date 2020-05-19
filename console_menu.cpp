@@ -21,9 +21,10 @@ int InputValid(int l = 0, int h = INT_MAX) {
 }
 
 int MainMenu() {
-  cout << "Main menu" << endl;
-  cout << "1. Create new" << endl;
-  cout << "2. Open" << endl;
-  cout << "0. Quit" << endl;
+  const char* msg = R"(Main menu
+1. Create new
+2. Open file
+0. Quit)";
+  cout << msg << endl;
   return InputValid(0, MainEnum::last);
 }

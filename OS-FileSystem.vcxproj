@@ -146,7 +146,7 @@
     <ClCompile Include="console_menu.cpp" />
     <ClCompile Include="ext2.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ext2_super_block.cpp" />
+    <ClCompile Include="super_block.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
