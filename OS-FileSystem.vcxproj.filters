@@ -15,31 +15,40 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ext2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="console_menu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="FAT32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="console_menu.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ext2.cpp">
+    <ClCompile Include="dir_entry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="super_block.cpp">
+    <ClCompile Include="sub_menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="fat_entry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="FAT32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dir_entry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sub_menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fat_entry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,36 +1,34 @@
-
 #include <iostream>
 
-#include "console_menu.h"
-#include "ext2.h"
-#include "utils.h"
+#include "FAT32.h"
+#include "sub_menu.h"
+using namespace std;
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::getline;
-using std::string;
-
-void CreateProcess();
-
-int main(int argc, char *argv[]) {
-  int mainC = 1;
-  // while (mainC = MainMenu()) {
-  //     switch (mainC) {
-  //       case MainEnum::create:
-  //         CreateProcess();
-  //         break;
-  //       case MainEnum::open:
-  //         break;
-  //     }
-  //   }
-  // TODO min size
-  ext2 fs(1, "test.next2");
-  return 0;
-}
-
-void CreateProcess() {
-  string fName = "";
-  cout << "New file path: ";
-  getline(cin, fName);
+int main() {
+  int select = -1;
+  cout << " Chon mot trong cac tinh nang sau:\n1. Tao volume\n2. Xem danh sach "
+          "File trong Volume\n3. Dat mat khau cho File trong Volume\n4. Export "
+          "File trong Volume ra ngoai\n5. Import File vao Volume\n6. Xoa File "
+          "trong Volume\n";
+  cout << "enter your choice: ";
+  cin >> select;
+  while (select != 0) {
+    switch (select) {
+      case 0:
+        break;
+      case 1:
+        Menu_1();
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
+      case 5:
+        break;
+      case 6:
+        break;
+    }
+  }
 }

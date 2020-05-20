@@ -18,6 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FAT32.cpp" />
+    <ClCompile Include="fat_entry.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="dir_entry.cpp" />
+    <ClCompile Include="sub_menu.cpp" />
+    <ClCompile Include="utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="FAT32.h" />
+    <ClInclude Include="dir_entry.h" />
+    <ClInclude Include="fat_entry.h" />
+    <ClInclude Include="sub_menu.h" />
+    <ClInclude Include="utils.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{F1E71FA3-56A2-4F38-BC19-E98916BFE5C1}</ProjectGuid>
@@ -99,6 +114,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,18 +153,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="console_menu.h" />
-    <ClInclude Include="ext2.h" />
-    <ClInclude Include="utils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="console_menu.cpp" />
-    <ClCompile Include="ext2.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="super_block.cpp" />
-    <ClCompile Include="utils.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
