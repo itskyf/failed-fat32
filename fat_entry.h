@@ -6,7 +6,7 @@ enum FatTable : uint32_t {
   eof = 0x0FFFFFFF,
   used_beg = 0x2,
   used_end = 0x0FFFFFFF,
-  empty = 0x0,
+  fempty = 0x0,
 };
 
 struct FatEntry {

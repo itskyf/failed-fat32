@@ -2,13 +2,15 @@
 
 #include "FAT32.h"
 #include "sub_menu.h"
+#include "utils.h"
 using namespace std;
 
 int main() {
   FAT32 *fs = nullptr;
   int select = -1;
-  cout << " 1. Create\n2.Open\n";
+  cout << "1. Create\n2.Open\n";
   cin >> select;
+  Flush(std::cin);
   switch (select) {
     case 0:
       break;

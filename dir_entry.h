@@ -7,7 +7,7 @@ enum class EntryType { main = 0, sub };
 class DirEntry {
  public:
   virtual void Read(char buf[32]) = 0;
-  virtual void Write(std::fstream &file) = 0;
+  virtual void Write(std::ofstream &file) = 0;
   virtual bool isEmpty() = 0;
   EntryType entryType;
   static bool isMain(char buf[32]);
@@ -20,10 +20,9 @@ class MainEntry : public DirEntry {
  public:
   MainEntry(char buf[32]) : DirEntry(EntryType::main) { Read(buf); };
 
-  void Init(std::string const &shortName, std::string const &ext,
-            EntryAttribute _att);
+  void Init(char shortName[11], EntryAttribute _att, uint32_t fSize);
   void Read(char buf[32]);
-  void Write(std::fstream &fo);
+  void Write(std::ofstream &fo);
   bool isEmpty();
 
   uint8_t filename[8];       // 8
@@ -40,12 +39,12 @@ class SubEntry : public DirEntry {
  public:
   SubEntry(char buf[32]) : DirEntry(EntryType::sub) { Read(buf); }
   void Read(char buf[32]);
-  void Write(std::fstream &fo);
+  void Write(std::ofstream &fo);
   bool isEmpty();
+  void InitName(char16_t *_name, uint8_t nb, int length = 10);
 
-  uint8_t sequence_number_name;  // 6 bit luu so thu tu, 2 bit ket thuc
-  uint8_t sequence_number_pass;
-  uint8_t pass[9];
+  uint8_t sequence_number_name = 0;  // 6 bit luu so thu tu, 2 bit ket thuc
+  uint8_t pass[10];
   uint8_t const signature = 0xF;  // TODO
   wchar_t name[10];
 };

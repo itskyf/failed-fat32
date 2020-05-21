@@ -37,32 +37,32 @@ struct BootSector {
   uint32_t BS_VolumeID;       // 4
   char BS_VolumeLabel[11];    // 11
   char BS_FileSystemType[8];  // 8
-  void Write(std::fstream &file);
-  void Read(std::fstream &file);
+  void Write(std::ofstream &file);
+  void Read(std::ifstream &file);
 };
 
 class FAT32 {
  public:
   FAT32(size_t sizeMb, std::string const &imgPath);
   FAT32(std::string const &imgPath);
-  virtual ~FAT32() {
-    if (file.is_open()) file.close();
-  }
+  virtual ~FAT32() = default;
 
   void Password(std::string const &fileName);
-  std::vector<MainEntry *> ReadRoot();
-  void printRoot(std::vector<MainEntry *> root);
+  std::vector<int> ReadRoot();
+  void printRoot(std::vector<int> mainIdx);
+  void RootWrite(std::filesystem::path const &srcPath);
 
  private:
-  void RootWrite(std::filesystem::path const &srcPath);
-  void ReadRDET();
-  void ReadFAT();
-  void WriteFAT();
-  void WriteRDET();
+  MainEntry *FindFile(std::string const &fName);
+  void ReadRDET(std::ifstream &fi);
+  void ReadFAT(std::ifstream &fi);
+  void WriteFAT(std::ofstream &fo);
+  void WriteRDET(std::ofstream &fo);
   void CalcMember();
+  std::wstring GetLongName(int idx);
   size_t CalClusterPos(uint32_t clus);
 
-  std::fstream file;
+  // std::fstream file;
   std::unique_ptr<BootSector> bs;
   std::unique_ptr<DirEntry *[]> rdet;
   int nRdetEntry;
@@ -73,4 +73,5 @@ class FAT32 {
   size_t fatPos;
 
   int clusByte;
+  std::string fName;
 };

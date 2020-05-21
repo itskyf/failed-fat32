@@ -8,6 +8,8 @@
 
 #include "utils.h"
 
+namespace fs = std::filesystem;
+
 int DivRoundup(int size, int n) {
   // Overflow-resistant
   int res = size / n;
@@ -33,7 +35,7 @@ uint16_t CalClusterSize(size_t sizeMb) {
   return 0;
 }
 
-void BootSector::Write(std::fstream &file) {
+void BootSector::Write(std::ofstream &file) {
   file.write(reinterpret_cast<char *>(&BS_Jump_Code), sizeof(BS_Jump_Code));
   file.write(reinterpret_cast<char *>(&BS_OEM_ID), sizeof(BS_OEM_ID));
   file.write(reinterpret_cast<char *>(&BytesPerSector), sizeof(BytesPerSector));
@@ -65,7 +67,7 @@ void BootSector::Write(std::fstream &file) {
              sizeof(BS_FileSystemType));
 }
 
-void BootSector::Read(std::fstream &file) {
+void BootSector::Read(std::ifstream &file) {
   file.read(reinterpret_cast<char *>(&BS_Jump_Code), sizeof(BS_Jump_Code));
   file.read(reinterpret_cast<char *>(&BS_OEM_ID), sizeof(BS_OEM_ID));
   file.read(reinterpret_cast<char *>(&BytesPerSector), sizeof(BytesPerSector));
@@ -98,10 +100,7 @@ void BootSector::Read(std::fstream &file) {
 }
 
 FAT32::FAT32(size_t sizeMb, std::string const &imgPath)
-    : file(imgPath, std::ios::out | std::ios::binary),
-      bs(new BootSector),
-      rdet(nullptr),
-      afat(nullptr) {
+    : bs(new BootSector), rdet(nullptr), afat(nullptr), fName(imgPath) {
   memset(bs->BS_Jump_Code, 0, sizeof(bs->BS_Jump_Code));
   memset(bs->BS_OEM_ID, 0, sizeof(bs->BS_OEM_ID));
 
@@ -120,28 +119,27 @@ FAT32::FAT32(size_t sizeMb, std::string const &imgPath)
   rdet.reset(new DirEntry *[nRdetEntry]);
   afat.reset(new FatEntry[nFatEntry]);
 
-  file.seekp((sizeMb << 20) - 1);
-  file.write("", 1);
-  file.seekp(0);
-  bs->Write(file);
-
-  file.open(imgPath, std::ios::in | std::ios::out | std::ios::binary);
+  std::ofstream fo(fName, std::ios::binary);
+  fo.seekp((sizeMb << 20) - 1);
+  fo.write("", 1);
+  fo.seekp(0);
+  bs->Write(fo);
+  fo.close();
 }
 
-FAT32::FAT32(std::string const &imgPath)
-    : file(imgPath, std::ios::in | std::ios::out | std::ios::binary),
-      bs(new BootSector) {
-  if (!file.is_open()) {
-    std::cout << "Vol doesnt EXIST\n";
-    return;
+FAT32::FAT32(std::string const &imgPath) : fName(imgPath), bs(new BootSector) {
+  std::ifstream fi(fName, std::ios::binary);
+  if (!fi.is_open()) {
+    std::cout << "File doesnt EXIST\n";
+    throw;
   }
-  bs->Read(file);
+  bs->Read(fi);
   CalcMember();
   rdet.reset(new DirEntry *[nRdetEntry]);
   afat.reset(new FatEntry[nFatEntry]);
-  ReadRDET();
-  ReadFAT();
-  file.close();
+  ReadRDET(fi);
+  ReadFAT(fi);
+  fi.close();
 }
 
 void FAT32::CalcMember() {
@@ -165,13 +163,25 @@ void FAT32::CalcMember() {
   std::cout << "FAT entry: " << nFatEntry << std::endl;
 }
 
+std::wstring FAT32::GetLongName(int idx) {
+  std::wstring tmp;
+  while (rdet[--idx]->entryType == EntryType::sub) {
+    SubEntry *sub = dynamic_cast<SubEntry *>(rdet[idx]);
+    tmp += std::wstring(sub->name);
+    if (sub->sequence_number_name & 1) break;
+  }
+  return tmp;
+}
+
 size_t FAT32::CalClusterPos(uint32_t clus) {
   return rdetPos + nRdetEntry << 2 + (clus - 2) * clusByte;
 }
 
 void FAT32::RootWrite(std::filesystem::path const &srcPath) {
-  namespace fs = std::filesystem;
-  assert(fs::exists(srcPath));
+  if (!fs::exists(srcPath)) {
+    std::cout << "File not existed" << std::endl;
+    return;
+  }
   int nSrcClus = DivRoundup(fs::file_size(srcPath), clusByte);
   int mSubEntry =
       (srcPath.filename().u16string().length() + 12) / 13;  // TOFIND
@@ -184,7 +194,7 @@ void FAT32::RootWrite(std::filesystem::path const &srcPath) {
     else
       nEmpty = 0;
     if (nEmpty > mSubEntry) {
-      startCopDirEntry = i - mSubEntry;
+      startCopDirEntry = i;
       break;
     }
   }
@@ -194,10 +204,10 @@ void FAT32::RootWrite(std::filesystem::path const &srcPath) {
   std::vector<FatEntry *> emptyFatArr(nSrcClus);
   std::vector<int> emptyFatIdx(nSrcClus);
   emptyFatArr.back() = nullptr;
-  for (int i = 2, n = 0; i < nFatEntry; ++i) {
-    if (afat[i].state == FatTable::empty) {
-      emptyFatArr[n++] = &afat[i];
-      emptyFatIdx[n] = i;
+  for (int i = 2, n = 0; i < nFatEntry && n < nSrcClus; ++i) {
+    if (afat[i].state == FatTable::fempty) {
+      emptyFatArr[n] = &afat[i];
+      emptyFatIdx[n++] = i;
     }
   }
   assert(emptyFatArr.back());
@@ -206,31 +216,44 @@ void FAT32::RootWrite(std::filesystem::path const &srcPath) {
   }
   emptyFatArr.back()->state = FatTable::eof;
 
-  // Buoc 9 + 11
+  char shortName[11];
+  ConvertShortName(srcPath, shortName);
   dynamic_cast<MainEntry *>(rdet[startCopDirEntry])
-      ->Init(srcPath.stem().u8string(), srcPath.extension().u8string(),
+      ->Init(shortName,
              fs::is_directory(srcPath) ? EntryAttribute::dir
-                                       : EntryAttribute::file);
-  WriteRDET();
-  WriteFAT();
+                                       : EntryAttribute::file,
+             fs::file_size(srcPath));
+  std::u16string longName = srcPath.filename().u16string();
+  for (int i = 1; i < mSubEntry; ++i) {
+    dynamic_cast<SubEntry *>(rdet[size_t(startCopDirEntry) - i])
+        ->InitName(&longName[10 * (size_t(i) - 1)], i);
+  }
+  dynamic_cast<SubEntry *>(rdet[size_t(startCopDirEntry) - mSubEntry])
+      ->InitName(&longName[10 * (size_t(mSubEntry) - 1)], mSubEntry,
+                 longName.length() % 10);
+
+  std::ofstream fo(fName, std::ios::binary | std::ios::out | std::ios::in);
+  WriteRDET(fo);
+  WriteFAT(fo);
 
   std::ifstream fi(srcPath.filename().u16string(), std::ios::binary);
   char *buf = new char[clusByte];
   int i = 0;
   while (!fi.eof()) {
-    file.seekp(CalClusterPos(emptyFatArr[i++]->state));
     fi.read(buf, clusByte);
-    file.write(buf, clusByte);
+    fo.seekp(CalClusterPos(emptyFatArr[i++]->state));
+    fo.write(buf, clusByte);
   }
   delete[] buf;
   fi.close();
+  fo.close();
 }
 
-void FAT32::ReadRDET() {
-  file.seekg(rdetPos);
+void FAT32::ReadRDET(std::ifstream &fi) {
+  fi.seekg(rdetPos);
   for (int i = 0; i < nRdetEntry; ++i) {
     char buf[32];
-    file.read(buf, 32);
+    fi.read(buf, 32);
     if (DirEntry::isMain(buf)) {
       rdet[i] = new MainEntry(buf);
     } else {
@@ -239,38 +262,45 @@ void FAT32::ReadRDET() {
   }
 }
 
-void FAT32::ReadFAT() {
-  file.seekg(fatPos);
-  file.read(reinterpret_cast<char *>(afat.get()), size_t(nFatEntry) << 2);
+void FAT32::ReadFAT(std::ifstream &fi) {
+  fi.seekg(fatPos);
+  fi.read(reinterpret_cast<char *>(afat.get()), size_t(nFatEntry) << 2);
   // TOFIND
 }
 
-void FAT32::WriteRDET() {
-  file.seekp(rdetPos);
-  for (int i = 0; i < nRdetEntry; ++i) rdet[i]->Write(file);
+void FAT32::WriteRDET(std::ofstream &fo) {
+  fo.seekp(rdetPos);
+  for (int i = 0; i < nRdetEntry; ++i) {
+    rdet[i]->Write(fo);
+  }
 }
 
-void FAT32::WriteFAT() {
-  file.seekp(fatPos);
-  file.write(reinterpret_cast<char *>(afat.get()), size_t(nFatEntry) << 2);
+void FAT32::WriteFAT(std::ofstream &fo) {
+  fo.seekp(fatPos);
+  fo.write(reinterpret_cast<char *>(afat.get()), size_t(nFatEntry) << 2);
 }
 
-std::vector<MainEntry *> FAT32::ReadRoot() {
-  std::vector<MainEntry *> root;
+std::vector<int> FAT32::ReadRoot() {
+  std::vector<int> root;
   for (int i = 0; i < nRdetEntry; ++i) {
     if (rdet[i]->entryType == EntryType::main && !rdet[i]->isEmpty()) {
       MainEntry *mainEntryPtr = dynamic_cast<MainEntry *>(rdet[i]);
-      root.push_back(mainEntryPtr);
+      root.push_back(i);
     }
   }
   return root;
 }
-void FAT32::printRoot(std::vector<MainEntry *> root) {
+
+void FAT32::printRoot(std::vector<int> mainIdx) {
   std::cout << "Flie name   "
             << "size (byte)" << std::endl;
-  for (int i = 0; i < root.size(); i++) {
-    std::cout << root[i]->filename << "\t" << root[i]->fileSize << std::endl;
+  for (int i = 0; i < mainIdx.size(); i++) {
+    std::wcout << GetLongName(mainIdx[i]) << "\t"
+               << dynamic_cast<MainEntry *>(rdet[mainIdx[i]])->fileSize
+               << std::endl;
   }
 }
 
 void FAT32::Password(std::string const &fileName) {}
+
+MainEntry *FindFile(std::string const &fName) { return nullptr; }

@@ -52,9 +52,35 @@ void WriteBuffer(char const *buffer, int const &length) {
   fo.close();
 }
 
+void ConvertShortName(std::filesystem::path const &fPath, char buffer[11]) {
+  std::string fName = fPath.stem().u8string();
+  std::string ext = fPath.extension().u8string();
+
+  memset(buffer, ' ', sizeof(buffer));
+  if (!ext.empty()) {
+    for (int i = 0; i < 3; ++i) {
+      buffer[8 + i] = toupper(ext[i]);
+    }
+  }
+
+  // Write the filename
+  if (fName.length() > 8) {
+    // Write the weird tilde thing.
+    for (int i = 0; i < 6; i++) {
+      buffer[i] = toupper(fName[i]);
+    }
+    buffer[6] = '~';
+    buffer[7] = '1';  // TODO need to enumerate files and increment.
+  } else {
+    for (int i = 0; i < fName.length(); ++i) {
+      buffer[i] = toupper(fName[i]);
+    }
+  }
+}
+
 void CommandParser() {
   std::string cmd = "", path = "";
   std::getline(std::cin, cmd, ' ');
   std::getline(std::cin, path);
-  //TODO trim
+  // TODO trim
 }
