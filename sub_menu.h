@@ -1,15 +1,17 @@
 #pragma once
+#include "fat_entry.h"
+#include "dir_entry.h"
 #include "FAT32.h"
 #include<iostream>
 #include<string>
 using namespace std;
 
-void Menu_1();
-void Menu_2();
-void Menu_3();
-void Menu_4();
-void Menu_5();
-void Menu_6();
+void Menu_1(FAT32 *fat);
+void Menu_2(FAT32 *fat);
+void Menu_sub(FAT32 *fat);
+void MenuImport(FAT32 *fat);
+void Menu_showFile(FAT32*fat);
+void Menu_Password();
 
 
 

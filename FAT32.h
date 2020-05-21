@@ -3,6 +3,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "dir_entry.h"
 #include "fat_entry.h"
@@ -43,19 +44,33 @@ struct BootSector {
 class FAT32 {
  public:
   FAT32(size_t sizeMb, std::string const &imgPath);
-  // FAT32(std::string const &imgPath) {}  // TODO
-  virtual ~FAT32() = default;
+  FAT32(std::string const &imgPath);
+  virtual ~FAT32() {
+    if (file.is_open()) file.close();
+  }
+
+  void Password(std::string const &fileName);
+  std::vector<MainEntry *> ReadRoot();
+  void printRoot(std::vector<MainEntry *> root);
 
  private:
   void RootWrite(std::filesystem::path const &srcPath);
   void ReadRDET();
   void ReadFAT();
+  void WriteFAT();
+  void WriteRDET();
+  void CalcMember();
+  size_t CalClusterPos(uint32_t clus);
 
   std::fstream file;
   std::unique_ptr<BootSector> bs;
-  std::unique_ptr<DirEntry *> rdet;
-  std::unique_ptr<FatEntry> afat;
-
+  std::unique_ptr<DirEntry *[]> rdet;
   int nRdetEntry;
+  size_t rdetPos;
+
+  std::unique_ptr<FatEntry[]> afat;
   int nFatEntry;
+  size_t fatPos;
+
+  int clusByte;
 };

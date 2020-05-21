@@ -1,10 +1,11 @@
 #include "utils.h"
 
-#include "Windows.h"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
-void Flush(std::istream& fi) {
+#include "Windows.h"
+
+void Flush(std::istream &fi) {
   int ch;
   while ((ch = fi.get()) != '\n' && ch != EOF)
     ;
@@ -49,4 +50,11 @@ void WriteBuffer(char const *buffer, int const &length) {
   std::ofstream fo("output.bin", std::ios::binary);
   fo.write(buffer, length);
   fo.close();
+}
+
+void CommandParser() {
+  std::string cmd = "", path = "";
+  std::getline(std::cin, cmd, ' ');
+  std::getline(std::cin, path);
+  //TODO trim
 }
